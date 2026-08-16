@@ -1,0 +1,25 @@
+# Jenkins + Node.js + Playwright browsers в одном образе: контейнер работает постоянно
+FROM jenkins/jenkins:lts-jdk17
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl gnupg git \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Браузеры и системные зависимости Playwright ставятся один раз при сборке образа,
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx --yes playwright@1.62.1 install --with-deps chromium \
+    && chown -R jenkins:jenkins /ms-playwright
+
+# Плагины, необходимые для pipeline (Jenkinsfile) и публикации HTML-отчёта Playwright
+COPY Jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+# Пропускает мастер первого запуска и сразу создаёт пользователя admin/admin (см. README "Доступы").
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Dhudson.model.DirectoryBrowserSupport.CSP=\"script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';\""
+COPY Jenkins/init-security.groovy /usr/share/jenkins/ref/init.groovy.d/init-security.groovy
+
+USER jenkins

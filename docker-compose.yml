@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  miractal-tests:
+    build: .
+    container_name: miractal-tests
+    environment:
+      BASE_URL: ${BASE_URL:-https://demo.realworld.show}
+      PLAYWRIGHT_WORKERS: ${PLAYWRIGHT_WORKERS:-4}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      REPORT_URL: ${REPORT_URL:-}
+      CI: 'true'
+    ipc: host
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
+    command: ["npx", "playwright", "test"]
+
+  miractal-report:
+    build: .
+    container_name: miractal-report
+    depends_on:
+      - miractal-tests
+    volumes:
+      - ./playwright-report:/app/playwright-report
+    ports:
+      - '51876:9323'
+    command: ["npx", "playwright", "show-report", "--host", "0.0.0.0", "--port", "9323"]
+
+  # Jenkins + Node + Playwright в одном образе. Работает постоянно
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: miractal-jenkins
+    restart: unless-stopped
+    environment:
+      BASE_URL: ${BASE_URL:-https://demo.realworld.show}
+      PLAYWRIGHT_WORKERS: ${PLAYWRIGHT_WORKERS:-4}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    ports:
+      - '8080:8080'
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
+volumes:
+  jenkins_home:

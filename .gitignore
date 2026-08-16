@@ -1,0 +1,16 @@
+# Node / Playwright artefacts
+node_modules/
+playwright-report/
+test-results/
+dist/
+storageState.json
+.env
+
+# Logs
+npm-debug.log*
+*.log
+
+# macOS & IDE
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,24 @@
+{
+  "name": "miractal-autotests",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript autotests for Conduit (RealWorld App) demo.realworld.show",
+  "type": "commonjs",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "install:browsers": "npx playwright install --with-deps chromium",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
+    "@playwright/test": "1.62.1",
+    "@types/node": "^22.10.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "playwright": "1.62.1",
+    "typescript": "^5.7.2"
+  }
+}

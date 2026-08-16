@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds(abortPrevious: true)
+    }
+
+    parameters {
+        string(name: 'TEST_NAME', defaultValue: '', description: 'Запуск определённого теста по названию')
+        string(name: 'WORKERS', defaultValue: '4', description: 'Количество воркеров Playwright')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'node -v'
+                sh 'npm -v'
+                sh 'npm ci'              
+                sh 'npx playwright install chromium'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    def exitCode = sh(
+                        returnStatus: true,
+                        script: """
+                            PLAYWRIGHT_WORKERS=${params.WORKERS} \
+                            npx playwright test ${params.TEST_NAME ? "--grep='${params.TEST_NAME}'" : ''}
+                        """
+                    )
+
+                    if (exitCode != 0) {
+                        error("Тесты завершились с ошибкой (exit code: ${exitCode})")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Playwright Report',
+                reportTitles: 'Miractal Playwright Report'
+            ])
+
+            archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+        }
+    }
+}
